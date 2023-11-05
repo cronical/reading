@@ -7,8 +7,11 @@ import pandas as pd
 
 data=[]
 base='data'
-for item in os.listdir(base):
-  folder=os.path.join(base,item)
+mail_path=base+'/maildrop'
+outfile='booklist.csv'
+csv_file=os.path.join(base,outfile)
+for item in os.listdir(mail_path):
+  folder=os.path.join(mail_path,item)
   if os.path.isdir(folder):
     file=os.path.join(folder,"text.txt")
     if os.path.exists(file):
@@ -39,4 +42,5 @@ for item in os.listdir(base):
         data+=[[date,author,title,subtitle]]
 df=pd.DataFrame(data=data,columns=['date','author','title','subtitle'])
 pd.set_option('display.max_colwidth',40)
-print(df)
+df.to_csv(csv_file)
+print('%d records written to %s'%(df.shape[0],csv_file))

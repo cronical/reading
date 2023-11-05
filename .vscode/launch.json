@@ -17,7 +17,7 @@
       "type": "python",
       "request": "launch",
       "program": "search.py",
-      "args": ["the", "cold", "war","-a", "Gaddis"],
+      "args": ["-f", "data/booklist.csv"],
       "console": "integratedTerminal",
       "justMyCode": true
     }
