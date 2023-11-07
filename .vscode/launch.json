@@ -13,14 +13,24 @@
       "justMyCode": true
     },
     {
-      "name": "search args",
+      "name": "search single",
       "type": "python",
       "request": "launch",
       "program": "search.py",
-      "args": ["-f", "data/booklist.csv"],
+      "args": ["the difference engine", "-a","gibson"],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "search file",
+      "type": "python",
+      "request": "launch",
+      "program": "search.py",
+      "args": [ "-f","data/booklist.csv"],
       "console": "integratedTerminal",
       "justMyCode": true
     }
+
 
   ]
 }
