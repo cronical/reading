@@ -21,7 +21,9 @@ def ta_template(title_only=False):
     to_replace=replace_title,
 
   else:
-    source_url='https://lci-mt.iii.com/iii/encore/search/C__St%3A%28The%20periodic%20table%29%20a%3A%28Eric%20R.%20Scerri%29%20c%3A29__Lf%3Afacetcollections%3A29%3A29%3ASouthWindsor%3A%3A__Orightresult__U?lang=eng&suite=cobalt'
+    #source_url='https://lci-mt.iii.com/iii/encore/search/C__St%3A%28The%20periodic%20table%29%20a%3A%28Eric%20R.%20Scerri%29%20c%3A29__Lf%3Afacetcollections%3A29%3A29%3ASouthWindsor%3A%3A__Orightresult__U?lang=eng&suite=cobalt'
+    # the following one does not limit to southwindsor
+    source_url='https://lci-mt.iii.com/iii/encore/search/C__St%3A%28The%20periodic%20table%29%20a%3A%28Eric%20R.%20Scerri%29__Orightresult__U?lang=eng&suite=cobalt'
     replace_title='The periodic table'
     replace_author='Eric R. Scerri'
     to_replace=replace_title,replace_author
@@ -131,10 +133,11 @@ def get_lci_info (df):
   site='https://lci-mt.iii.com'
   fragment='lang=eng&suite=cobalt'
   session=prep_session(site)
+  ixs=[]
   isbns=[]
   callnos=[]
   filenames=[]
-  for _,row in df.iterrows():
+  for ix,row in df.iterrows():
     callno,isbn,filename=None,None,None
     title=row['title']
     author=row['author']
@@ -184,10 +187,10 @@ def get_lci_info (df):
       library_map={}
       for tr in library_table.find_all('tr'):
         if tr.find('th') is None:
-          for ix,td in enumerate(tr.find_all('td')):
-            if ix==0:
+          for x,td in enumerate(tr.find_all('td')):
+            if x==0:
               library=' '.join(td.text.strip().split(' '))
-            if ix==1:
+            if x==1:
               callno=' '.join(td.find('a').text.strip().split(' '))
               library_map[library]=callno
               break
@@ -252,11 +255,12 @@ def get_lci_info (df):
       else:
         isbn=found_isbns[0]
 
+    ixs+=[ix]
     isbns+=[isbn]
     callnos+=[callno]
     filenames+=[filename]
 
-  df=pd.DataFrame(zip(isbns,callnos,filenames),columns=['isbn','callno','cover'])
+  df=pd.DataFrame(zip(isbns,callnos,filenames),columns=['isbn','callno','cover'],index=ixs)
   return df
 
 def enhance_covers(df):
@@ -278,11 +282,12 @@ def main():
     assert (len(args.title)==0) & (args.author is None), 'file option must be used alone'
     filepath=os.path.join(args.file)
     df=pd.read_csv(filepath)
-    lci_info=get_lci_info(df)
+    new=df.callno.isna()
+    lci_info=get_lci_info(df.loc[new])
     lci_info=enhance_covers(lci_info)
     sel=lci_info.isbn.notna()
     lci_info.loc[sel,'isbn']=[xl_friendly_isbn(i)for i in lci_info.loc[sel,'isbn'].to_list() ]
-    df[lci_info.columns]=lci_info
+    df.loc[new,lci_info.columns]=lci_info
     df.to_csv(filepath,index=False)
   if args.title:
     title=' '.join(args.title)

@@ -1,4 +1,34 @@
-# Data sources
+# Enhance data
+
+Book data is stored inn `booklist.csv`
+
+Creates or updates booklist.csv.
+The mail notices include data for date,author,title,subtitle.  These are parsed by `parse_checkouts` and merged with existing records.
+
+The data is enhanced by `search.py` to include the isbn,callno,cover fields.
+
+Titles and check-out dates are assumed correct and are used to determine whether to add new records (together they are unique).
+Other fields may be amended in booklist.csv and they will be carried forward upon update.
+
+Work flow is 
+
+1. put latest updated booklist in data/
+1. bring emails into /data/maildrop
+1. run parse_checkout
+1. run search
+
+At that point the booklist and data/covers/ have been updated
+
+# to do
+
+1. Is there someway to capture the library to go with the call number?
+2. In search there are places (or maybe just one) where we take the first of a list (is there something better?)
+3. Pull data from reading history as alternative to email.
+
+
+
+
+## Data sources
 
 ## items from checkout emails
 
