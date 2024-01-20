@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-import argparse
-import csv
-import io
-import os.path
+"""Items to do with library connection inc
+"""
+import datetime
+
 import re
 import urllib.parse
-from urllib3.util import Retry
-from requests.adapters import HTTPAdapter
+
 from bs4 import BeautifulSoup
 import imageio.v3 as iio
 import pandas as pd
-import requests
-file_base='data/covers'
+
+from navigate import prep_session, insert_parms,soup_from_url
+from parse import title_subitle, drop_trailing_point, author_clean
 
 def ta_template(title_only=False):
   # copied from the browser to form a template
@@ -36,96 +36,13 @@ def ta_template(title_only=False):
   for text in to_replace:
     path_template=path_template.replace(text,'%s')
   return scheme,hostname,path_template
-def xl_friendly_isbn(isbn):
-  '''force excel to show isbn as a string'''
-  if pd.isna(isbn): return isbn
-  return '="%s"'% isbn
-
-def insert_parms(path_template,title,author=None):
-  # insert the new parms
-  match author is None:
-    case True:
-      path=path_template%title
-    case False:
-      path=path_template%(title,author)
-  path=urllib.parse.quote(path)
-  return path
-def prep_session(url,headers=None):
-  s = requests.Session()
-  retries = Retry(
-      total=4,
-      backoff_factor=1,
-      status_forcelist=[429],
-      allowed_methods={'GET'},
-  )
-  s.mount('https://', HTTPAdapter(max_retries=retries))  
-  _=s.get(url,headers=headers)# get any cookies  
-  return s
-
-def soup_from_url(session,url,method='get',data=None):
-  match method:
-    case 'get':
-      r=session.get(url)
-    case 'post':
-      r=session.post(url,data=data)
-  if r.status_code!=200:
-    raise ValueError('Did not get a 200 back')
-  if r.history:
-    print("Request was redirected")
-    #print(r.history)
-    #for resp in r.history:
-        #print(resp.status_code, resp.url)
-    #print("Final destination:")
-    #print(r.status_code, r.url)
-  return BeautifulSoup(r.content,'lxml')  
-
-def get_biblio_covers(isbns):
-  '''Downloads cover for isbns and returns List of True if success, else false
-  Looks each isbn up to find a cover and downloads the cover into data/covers
-  File is name <isbn>.jpg
-  returns filename or None for each isbn
-  '''
-  if not isinstance(isbns,list):
-    isbns=[isbns]
-  filenames=[]
-  headers={
-  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Safari/605.1.15',
-  }
-  isbn_url='https://www.biblio.com'
-  session=prep_session(isbn_url,headers=headers)
-  for isbn in isbns:
-    if isbn:
-      r=session.get(isbn_url+'/'+isbn,headers=headers)
-      assert r.status_code==200,'Did not get a 200 back'
-      soup=BeautifulSoup(r.content,'lxml')
-      ts=soup.find(id='top-section')
-      if ts is None:
-        print(isbn_url+' giving alternate page not programmed')
-        filenames+=[ None]
-        continue
-      img_url=ts.find('img').attrs['src']
-      r=requests.get(img_url)
-      if r.status_code!=200:
-        print('Did not get a 200 back')
-        filenames+=[ None]
-        continue
-      filename=isbn+'.jpg'
-      filepath=os.path.sep.join([file_base,filename])
-      with open(filepath,'wb') as f:
-        f.write(r.content)
-      print('wrote cover image to: '+filepath)
-      filenames+=[filename]
-    else:
-      filenames+=[None]
-  return filenames
-
+  
 def get_lci_info (df):
   '''
   Searches for title (and author) on LCI
   df is a dataframe with columns for title and author
   author values may be NA
-  Opens first book record and looks for isbn, callno
+  For each book, opens record on LCI Encore and looks for isbn, callno
   If an image is available from content cafe, writes it to a file
   Raises Value errors under some conditions
   Returns dataframe of isbns, callno and cover (the name of the image file)
@@ -263,42 +180,36 @@ def get_lci_info (df):
   df=pd.DataFrame(zip(isbns,callnos,filenames),columns=['isbn','callno','cover'],index=ixs)
   return df
 
-def enhance_covers(df):
-  '''for missing covers that have isbn try biblio'''
-  sel=df.isbn.notna() & df.cover.isna()
-  other_covers=get_biblio_covers(df.loc[sel,'isbn'].to_list())
-  df.loc[sel,'cover']=other_covers
+def extract_history_table():
+  """Covert the html of the reading history into a dataframe
+  The table is in a frame on the site. There is a pagination function.
+  This is just dealing with a saved copy of one page, so far.
+  It is needed to get the check out date.
+  """
+  with open('data/my_history_cover.html') as f:
+    html=f.read()
+  class_map={'patFuncBibTitle':'th','patFuncAuthor':'td','patFuncDate':'td'}
+  soup=BeautifulSoup(html,features="lxml")
+  entries=soup.find_all('tr','patFuncEntry')
+  df=pd.DataFrame([],columns=['date','title','subtitle','author'])
+  for entry in entries:
+    row={}
+    for class_,tag in class_map.items():
+      val=entry.find(tag,class_).text.strip()
+      field=''.join(re.split('([A-Z])',class_)[-2:]).lower() # last word of camel case
+      match field:
+        case 'title':
+          val,sub=title_subitle(val)
+          row['subtitle']=sub
+        case 'date':
+          val=datetime.datetime.strptime(val,"%m-%d-%Y")
+        case 'author':
+          val=drop_trailing_point(author_clean(val))
+      row[field]=val
+    df.loc[df.shape[0]]=row
   return df
 
-def main():
-  parser=argparse.ArgumentParser('Input title and possibly author')
-  single=parser.add_argument_group('single')
-  from_file=parser.add_argument_group('from_file')
-  single.add_argument('title',nargs='*')
-  single.add_argument('--author', '-a', nargs='*')
-  from_file.add_argument('--file','-f')
-  args=parser.parse_args()
-  if args.file:
-    assert (len(args.title)==0) & (args.author is None), 'file option must be used alone'
-    filepath=os.path.join(args.file)
-    df=pd.read_csv(filepath)
-    new=df.callno.isna()
-    lci_info=get_lci_info(df.loc[new])
-    lci_info=enhance_covers(lci_info)
-    sel=lci_info.isbn.notna()
-    lci_info.loc[sel,'isbn']=[xl_friendly_isbn(i)for i in lci_info.loc[sel,'isbn'].to_list() ]
-    df.loc[new,lci_info.columns]=lci_info
-    df.to_csv(filepath,index=False)
-  if args.title:
-    title=' '.join(args.title)
-    author=args.author
-    title_only=author is None
-    if not title_only:
-      author=' '.join(author)
-    df=pd.DataFrame([{'title':title,'author':author}])
-    lci_info=get_lci_info(df)
-    lci_info=enhance_covers(lci_info)
-    print(lci_info)
 
 if __name__=='__main__':
-  main()
+  # testing
+  print(extract_history_table())

@@ -13,6 +13,14 @@
       "justMyCode": true
     },
     {
+      "name": "parse_export",
+      "type": "python",
+      "request": "launch",
+      "program": "parse_export.py",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
       "name": "search single",
       "type": "python",
       "request": "launch",

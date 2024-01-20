@@ -1,32 +1,59 @@
+# Data
+
+Book data is stored in `booklist.csv`
+
+# Sources
+
+Email and history are sources that create intermediate files, that are enhanced to include cover image file names, and in the case of email, isbns and call numbers.
+
+## Email
+
+`parse_email_checkouts` The mail notices include data for date,author,title,subtitle.  These are parsed by `parse_email_checkouts` stored as `email_data.csv`.
+
+# My reading history
+
+The my reading history function on LCI encore has an export.
+The program `parse_export.py` creates intermediate file `my_history.csv`.
+
+In order to get the check out date, the export needs to be enhanced with data from the my history home page (which is paginated in a frame).  So far working just with a saved copy of the 1st page.
+
+
 # Enhance data
 
-Book data is stored inn `booklist.csv`
+## email data
 
-Creates or updates booklist.csv.
-The mail notices include data for date,author,title,subtitle.  These are parsed by `parse_checkouts` and merged with existing records.
-
-The data is enhanced by `search.py` to include the isbn,callno,cover fields.
+The data email data is enhanced by `covers.py` to include the isbn,callno,cover fields.
 
 Titles and check-out dates are assumed correct and are used to determine whether to add new records (together they are unique).
 Other fields may be amended in booklist.csv and they will be carried forward upon update.
 
-Work flow is 
+Email based Work flow is 
 
 1. put latest updated booklist in data/
 1. bring emails into /data/maildrop
 1. run parse_checkout
-1. run search
+1. run covers
 
-At that point the booklist and data/covers/ have been updated
+At that point the email_data.csv and data/covers/ have been updated
+
+## my history
+
+All the fields are populated directly with `parse_export.py` This has to prompt in some cases.  
+
+For library it uses the home library unless there it is not on list. If there is only one, use that.  Otherwise ask.
+For standard book numbers it prefers hardback 13 digit, if thats not available it will ask. (this may not be ideal)
+
+This is also taking fields not currently used, such as publication info and format.
+
+# Merge
+`merge.py` takes the intermediate files and appends new records to  `booklist.csv`.
+
+It uses the date and the title as they common key for this.
 
 # to do
 
-1. Is there someway to capture the library to go with the call number?
-2. In search there are places (or maybe just one) where we take the first of a list (is there something better?)
-3. Pull data from reading history as alternative to email.
-
-
-
+1. For export we capture the library to go with the call number, is there a way to do this with email.
+2. In `covers` there are places (or maybe just one) where we take the first of a list (should it prompt?)
 
 ## Data sources
 
