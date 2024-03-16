@@ -11,7 +11,9 @@ import imageio.v3 as iio
 import pandas as pd
 
 from navigate import prep_session, insert_parms,soup_from_url
-from parse import title_subitle, drop_trailing_point, author_clean
+from parse import title_subitle_author, drop_trailing_point, author_clean
+
+readinghistory='data/readinghistory.html'
 
 def ta_template(title_only=False):
   # copied from the browser to form a template
@@ -186,7 +188,7 @@ def extract_history_table():
   This is just dealing with a saved copy of one page, so far.
   It is needed to get the check out date.
   """
-  with open('data/my_history_cover.html') as f:
+  with open(readinghistory) as f:
     html=f.read()
   class_map={'patFuncBibTitle':'th','patFuncAuthor':'td','patFuncDate':'td'}
   soup=BeautifulSoup(html,features="lxml")
@@ -199,7 +201,7 @@ def extract_history_table():
       field=''.join(re.split('([A-Z])',class_)[-2:]).lower() # last word of camel case
       match field:
         case 'title':
-          val,sub=title_subitle(val)
+          val,sub,_=title_subitle_author(val)
           row['subtitle']=sub
         case 'date':
           val=datetime.datetime.strptime(val,"%m-%d-%Y")

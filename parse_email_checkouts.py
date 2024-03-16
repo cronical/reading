@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 '''Parse the files downloaded from email
+This method is problematic due to truncation in the email for items with long titles.
 '''
 import datetime
 import os
 import pandas as pd
+from via.model.contributor import from_title
 
 base='data'
 outfile='email_data.csv'
@@ -27,9 +29,7 @@ for item in os.listdir(mail_path):
             ta=line.split(' / ')
             author=None
             if len(ta)==2:
-              author=ta[1]
-              if author[-1]=='.':
-                author=author[:-1]
+              author=from_title(ta[1]).flat_authors()
             ta[0]=ta[0].replace(';',' :')# subtitle delimiter is wrong (at least once)
             title=ta[0].split(' : ')
             subtitle=None

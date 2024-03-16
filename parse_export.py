@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
 '''Parse the files downloaded from the LCI my reading history export function "Full Display"
+While there is a field for Author it is not as full featured as the part after the slash in the title field,
+so we use that instead.
 '''
 import datetime
+import logging
 import re
 import pandas as pd
 from simple_term_menu import TerminalMenu
 
-from parse import title_subitle, drop_trailing_point, xl_friendly_isbn, author_clean
+from parse import title_subitle_author, drop_trailing_point, xl_friendly_isbn
+from via.model.contributor import from_title
 from lci import extract_history_table
 from biblio import enhance_covers
 
+logger=logging.getLogger(__name__) 
 edition_fields=['isbn','format']
 lib_fields=['library','callno']
 pub_fields=['publ_city','publisher','publ_year','copyright_year']
@@ -20,9 +25,7 @@ datafile='data/export.txt'
 outfile='data/my_history.csv'
 library_file='data/libraries.csv'
 libraries=pd.read_csv(library_file)
-pat_record=r'^(Record|AUTHOR|TITLE|PUB INFO|STANDARD #|\d{1,2} >)(.*$)'
-
-
+pat_record=r'^(Record|TITLE|PUB INFO|STANDARD #|\d{1,2} >)(.*$)'
 
 def select_pub_info(pub_infos,title):
   """Get just one"""
@@ -62,7 +65,7 @@ def select_library_call_no(libs,home_library,title):
     callno=tab_row[31:62].strip()
     if not (libraries.library.str.startswith(lib[0])).any():
       if not (libraries.alias.str.startswith(lib[0])).any():
-        print(f'Not in master library list: {lib[0]}')
+        logger.warning(f'Not in master library list: {lib[0]}')
     lc+=[(lib[0],callno)]
     if lib[0].startswith(home_library):
       home+=[ix]
@@ -70,12 +73,15 @@ def select_library_call_no(libs,home_library,title):
     return lc[home[0]]
   if len(lc)==1:
     return lc[0]
+  # prompt from the unique list of library towns (there can be >1 due to branches and collections)
   options=[a[0] for a in lc]
-  terminal_menu = TerminalMenu(options,title=f'Please select library for {title}')
+  options_u=sorted(list(set(options)))
+  terminal_menu = TerminalMenu(options_u,title=f'Please select library for {title}')
   menu_entry_index = terminal_menu.show()
   if menu_entry_index is None:
     raise ValueError("Cannot determine library")
-  return lc[menu_entry_index]
+  lc_ix=options.index(options_u[menu_entry_index])
+  return lc[lc_ix]
 
 def select_edition(editions,title):
   """ pick most likely one if possible, then ask if needed.
@@ -109,18 +115,19 @@ def complete_record(record,pub_info,libs,home_library,sbn):
   title=record['title']
   try:
     record.update(zip(pub_fields,select_pub_info(pub_info,title)))
-  except ValueError:
-    print(f'Could not determine publishing info for {title}')
+  except (ValueError, IndexError):
+    logger.warning(f'Could not determine publishing info for {title}')
   try:
     record.update(zip(lib_fields,select_library_call_no(libs,home_library=home_library,title=title)))
   except ValueError:
-    print(f'Could not determine library for {title}')
+    logger.warning(f'Could not determine library for {title}')
   try:
-    isbn,fmt=select_edition(sbn,title)
-    isbn=xl_friendly_isbn(isbn)
-    record.update(zip(edition_fields,(isbn,fmt)))
+    if len(sbn): # there are records with no standard # entries.
+      isbn,fmt=select_edition(sbn,title)
+      isbn=xl_friendly_isbn(isbn)
+      record.update(zip(edition_fields,(isbn,fmt)))
   except ValueError:
-    print(f'Could not determine isbn for {title}')
+    logger.warning(f'Could not determine isbn for {title}')
   return record
 
 def unwrap_file(path):
@@ -160,11 +167,11 @@ def read_file(path):
           pub_info=[]
           sbn=[]
           libs=[]
-        case 'AUTHOR' :
-          record[kw.lower()]=drop_trailing_point(author_clean(val))
         case 'TITLE':
-          val=title_subitle(val)
-          record.update(zip(tit_fields,val[0:2]))
+          val=title_subitle_author(val)
+          record.update(zip(tit_fields,val[0:2]))#title, subtitle
+          record['author']=from_title(val[2]).flat_authors()
+          pass
         case 'PUB INFO':
           pub_info+=[val]
         case 'STANDARD #':
@@ -194,9 +201,14 @@ def read_file(path):
   pd.options.display.max_columns=11
   pd.options.display.max_colwidth=20
   
-  #print(df)
+  sel=df.author.str.len()==0
+  if any(sel):
+    logger.warning("Ignoring line(s) with no author:")
+    for ix,row in df.loc[sel].iterrows():
+      logger.warning(f"   {row['title']}")
+    df=df.loc[~sel]
   df.to_csv(outfile,index=False)
-  print(f'Wrote to {outfile}')
+  logger.info(f'Wrote to {outfile}')
 
 if __name__=='__main__':
   read_file(datafile)  

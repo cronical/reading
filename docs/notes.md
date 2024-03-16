@@ -12,11 +12,13 @@ Email and history are sources that create intermediate files, that are enhanced 
 
 # My reading history
 
-The my reading history function on LCI encore has an export.
-The program `parse_export.py` creates intermediate file `my_history.csv`.
+The my reading history function on LCI encore has an export. In order to get the check out date, the export needs to be enhanced with data from the my history home page (which is paginated in a frame).  So far working just with a saved copy of the 1st page. 
 
-In order to get the check out date, the export needs to be enhanced with data from the my history home page (which is paginated in a frame).  So far working just with a saved copy of the 1st page.
+1. Get reading history: right click on the frame and open as a new page/tab.  Then save that as `data/readinghistory.html`.
 
+1. Download full display to local disk. This creates a file `~/Downloads/export.txt`.  Move that to the `data/` folder. 
+
+1. Run program `parse_export.py` which creates intermediate file `my_history.csv`.
 
 # Enhance data
 
