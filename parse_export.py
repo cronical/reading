@@ -16,7 +16,7 @@ from biblio import enhance_covers
 
 logger=logging.getLogger(__name__) 
 edition_fields=['isbn','format']
-lib_fields=['library','callno']
+lib_fields=['library','call_no']
 pub_fields=['publ_city','publisher','publ_year','copyright_year']
 tit_fields=['title','subtitle']
 fields=['author']+tit_fields+edition_fields+lib_fields+pub_fields
@@ -62,11 +62,11 @@ def select_library_call_no(libs,home_library,title):
     lib=tab_row[0:30].split('-')[0].strip() # ignore the collection part after the dash
     pat_branch=re.compile(r',|:|\sat\s') # sometimes its a colon, and bloomfield at the atrium
     lib=pat_branch.split(lib)
-    callno=tab_row[31:62].strip()
+    call_no=tab_row[31:62].strip()
     if not (libraries.library.str.startswith(lib[0])).any():
       if not (libraries.alias.str.startswith(lib[0])).any():
         logger.warning(f'Not in master library list: {lib[0]}')
-    lc+=[(lib[0],callno)]
+    lc+=[(lib[0],call_no)]
     if lib[0].startswith(home_library):
       home+=[ix]
   if len(home)==1:
