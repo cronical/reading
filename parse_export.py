@@ -10,11 +10,12 @@ import pandas as pd
 from simple_term_menu import TerminalMenu
 
 from parse import title_subitle_author, drop_trailing_point, xl_friendly_isbn
-from via.model.contributor import from_title
 from lci import extract_history_table
 from biblio import enhance_covers
 
+logging.basicConfig(level=logging.DEBUG)
 logger=logging.getLogger(__name__) 
+
 edition_fields=['isbn','format']
 lib_fields=['library','call_no']
 pub_fields=['publ_city','publisher','publ_year','copyright_year']
@@ -128,6 +129,7 @@ def complete_record(record,pub_info,libs,home_library,sbn):
       record.update(zip(edition_fields,(isbn,fmt)))
   except ValueError:
     logger.warning(f'Could not determine isbn for {title}')
+  logger.debug(f"Completed {title}")
   return record
 
 def unwrap_file(path):
@@ -170,8 +172,7 @@ def read_file(path):
         case 'TITLE':
           val=title_subitle_author(val)
           record.update(zip(tit_fields,val[0:2]))#title, subtitle
-          record['author']=from_title(val[2]).flat_authors()
-          pass
+          record['author']=val[2]# parsing (from_title) has moved to the load routine
         case 'PUB INFO':
           pub_info+=[val]
         case 'STANDARD #':
