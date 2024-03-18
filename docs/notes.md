@@ -24,7 +24,7 @@ The my reading history function on LCI encore has an export. In order to get the
 
 ## email data
 
-The data email data is enhanced by `covers.py` to include the isbn,callno,cover fields.
+The data email data is enhanced by `covers.py` to include the isbn,call_no,cover fields.
 
 Titles and check-out dates are assumed correct and are used to determine whether to add new records (together they are unique).
 Other fields may be amended in booklist.csv and they will be carried forward upon update.
@@ -33,14 +33,14 @@ Email based Work flow is
 
 1. put latest updated booklist in data/
 1. bring emails into /data/maildrop
-1. run parse_checkout
-1. run covers
+1. run parse_email_checkouts.py
+1. run covers.py
 
 At that point the email_data.csv and data/covers/ have been updated
 
 ## my history
 
-All the fields are populated directly with `parse_export.py` This has to prompt in some cases.  
+All the fields are populated directly with `parse_export.py`.  This has to prompt in some cases.  
 
 For library it uses the home library unless there it is not on list. If there is only one, use that.  Otherwise ask.
 For standard book numbers it prefers hardback 13 digit, if thats not available it will ask. (this may not be ideal)

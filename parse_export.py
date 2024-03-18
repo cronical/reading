@@ -56,7 +56,7 @@ def select_pub_info(pub_infos,title):
   raise ValueError("Cannot parse the publisher info")
 
 def select_library_call_no(libs,home_library,title):
-  """returns library and callno"""
+  """returns library and call_no"""
   lc=[]
   home=[]
   for ix,tab_row in enumerate(libs):

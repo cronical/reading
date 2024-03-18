@@ -6,7 +6,7 @@
   "configurations": [
     {
       "name": "Python: Current File",
-      "type": "python",
+      "type":"debugpy",
       "request": "launch",
       "program": "${file}",
       "console": "integratedTerminal",
@@ -14,15 +14,24 @@
     },
     {
       "name": "parse_export",
-      "type": "python",
+      "type":"debugpy",
       "request": "launch",
       "program": "parse_export.py",
       "console": "integratedTerminal",
       "justMyCode": true
     },
     {
+      "name": "covers arg",
+      "type":"debugpy",
+      "request": "launch",
+      "program": "covers.py",
+      "args":["-f", "data/email_data.csv"],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
       "name": "search single",
-      "type": "python",
+      "type":"debugpy",
       "request": "launch",
       "program": "search.py",
       "args": ["the difference engine", "-a","gibson"],
@@ -31,7 +40,7 @@
     },
     {
       "name": "search file",
-      "type": "python",
+      "type":"debugpy",
       "request": "launch",
       "program": "search.py",
       "args": [ "-f","data/booklist.csv"],

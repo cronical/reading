@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import os.path
+import warnings
 
 import pandas as pd
 
@@ -8,7 +9,10 @@ from biblio import enhance_covers
 from lci import get_lci_info
 from parse import xl_friendly_isbn
 
+
 file_base='data/covers'
+library= "South Windsor Public Library"
+
 
 def main():
   parser=argparse.ArgumentParser('Input title and possibly author')
@@ -18,17 +22,23 @@ def main():
   single.add_argument('--author', '-a', nargs='*')
   from_file.add_argument('--file','-f')
   args=parser.parse_args()
+
   if args.file:
     assert (len(args.title)==0) & (args.author is None), 'file option must be used alone'
     filepath=os.path.join(args.file)
     df=pd.read_csv(filepath)
-    new=df.callno.isna()
+    new=df.author==df.author
+    if 'call_no' in df.columns:
+      new=df.call_no.isna()
     lci_info=get_lci_info(df.loc[new])
     lci_info=enhance_covers(lci_info)
     sel=lci_info.isbn.notna()
     lci_info.loc[sel,'isbn']=[xl_friendly_isbn(i)for i in lci_info.loc[sel,'isbn'].to_list() ]
-    df.loc[new,lci_info.columns]=lci_info
+    warnings.simplefilter(action='ignore', category=FutureWarning)
+    df.loc[lci_info.index,lci_info.columns]=lci_info # generates a futurewarning but that is probably a bug (as of pandas version 2.1.2)
+    df.loc[new,"library"]=library
     df.to_csv(filepath,index=False)
+
   if args.title:
     title=' '.join(args.title)
     author=args.author

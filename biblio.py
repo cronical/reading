@@ -28,7 +28,7 @@ def get_biblio_covers(isbns,file_base='data/covers'):
     isbn=strip_xl_friendly(isbn)
     filename=isbn+'.jpg'
     filepath=os.path.sep.join([file_base,filename])
-    filenames+=[filename]
+    filenames+=[filename] # provisionally this will be the name (unless an error happens)
     if os.path.exists(filepath):
       print('using existing cover image: '+filepath)
     else:
@@ -39,13 +39,13 @@ def get_biblio_covers(isbns,file_base='data/covers'):
         ts=soup.find(id='top-section')
         if ts is None:
           print(isbn_url+' giving alternate page not programmed')
-          filenames+=[ None]
+          filenames[-1]=None
           continue
         img_url=ts.find('img').attrs['src']
         r=requests.get(img_url)
         if r.status_code!=200:
           print('Did not get a 200 back')
-          filenames+=[ None]
+          filenames[-1]=None
           continue
         with open(filepath,'wb') as f:
           f.write(r.content)
