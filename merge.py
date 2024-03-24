@@ -4,37 +4,54 @@
    Looks at the email and history files to see if there are any new items
    If there are then it appends those to the booklist data and resaves it.
 '''
+import argparse
+import logging
 import os
+import sys
 import pandas as pd
 
-base='data'
-infiles=['email_data.csv','my_history.csv']
-outfile='booklist.csv'
+logging.basicConfig(level=logging.INFO)
 
-booklist_file=os.path.join(base,outfile)
-if not os.path.exists(booklist_file):
-  raise ValueError(f"target file {booklist_file} does not exist")
-bl_df=pd.read_csv(booklist_file,parse_dates=['date'])
-print(f"existing columns are {bl_df.columns}")
-print(f"{bl_df.shape[0]} existing old records")
+def do_merge():
+  logger=logging.getLogger(__name__)
+  parser=argparse.ArgumentParser('Merge the email, my history and other_books data with the booklist')
+  parser.add_argument("-r","--reset",action="store_true",default=False,help="Removes any existing records of booklist before merging")
+  args=parser.parse_args()
 
-pd.set_option('display.max_colwidth',35)
-pd.set_option('display.max_columns',10)
-pd.set_option('display.width',0)
+  base='data'
+  infiles=['email_data.csv','my_history.csv','other_books.csv']
+  outfile='booklist.csv'
 
-for infile in infiles:
-  print(f"--{infile}--")
-  df=pd.read_csv(os.path.join(base,infile),parse_dates=['date'])
-  
-  bl_ix=pd.MultiIndex.from_frame(bl_df[['date','title']])
-  new_ix=pd.MultiIndex.from_frame(df[['date','title']])
-  sel=[x not in bl_ix for x in new_ix]
-  n=sum(sel)
-  print(f"{n} new records to append")
-  if n==0:
-    continue
-  df=df.loc[sel,bl_df.columns] # take only the existing columns
-  bl_df=pd.concat([bl_df,df]).reset_index(drop=True)
+  booklist_file=os.path.join(base,outfile)
+  for file in infiles+[outfile]:
+    if not os.path.exists(booklist_file):
+      logger.error(f"file {file} does not exist")
+      sys.exit(-1)
 
-bl_df.to_csv(booklist_file,index=False)
-print('%d records written to %s'%(bl_df.shape[0],booklist_file))
+  bl_df=pd.read_csv(booklist_file,parse_dates=['date'])
+  if args.reset:
+    n=len(bl_df)
+    bl_df=bl_df.loc[[False]*n]
+    logger.info(f"{n} existing records removed from {outfile}")
+  logger.debug(f"existing columns are {bl_df.columns}")
+  logger.debug(f"{bl_df.shape[0]} existing old records")
+
+  for infile in infiles:
+    logger.info(f"--{infile}--")
+    df=pd.read_csv(os.path.join(base,infile),parse_dates=['date'])
+    
+    bl_ix=pd.MultiIndex.from_frame(bl_df[['date','title']])
+    new_ix=pd.MultiIndex.from_frame(df[['date','title']])
+    sel=[x not in bl_ix for x in new_ix]
+    n=sum(sel)
+    logger.info(f"  {n} new records to append")
+    if n==0:
+      continue
+    df=df.loc[sel,bl_df.columns] # take only the existing columns
+    bl_df=pd.concat([bl_df,df]).reset_index(drop=True)
+
+  bl_df.to_csv(booklist_file,index=False)
+  logger.info(f'{len(bl_df)} records written to {booklist_file}')
+
+if __name__=='__main__':
+  do_merge()
