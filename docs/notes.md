@@ -31,10 +31,10 @@ Other fields may be amended in booklist.csv and they will be carried forward upo
 
 Email based Work flow is 
 
-1. put latest updated booklist in data/
+1. put latest updated booklist in data/ (or just the headings if doing a full reset)
 1. bring emails into /data/maildrop
-1. run parse_email_checkouts.py
-1. run covers.py
+1. run `./parse_email_checkouts.py`
+1. run `./covers.py -f data/email_data.csv`
 
 At that point the email_data.csv and data/covers/ have been updated
 
@@ -48,13 +48,13 @@ For standard book numbers it prefers hardback 13 digit, if thats not available i
 This is also taking fields not currently used, such as publication info and format.
 
 # Merge
-`merge.py` takes the intermediate files and appends new records to  `booklist.csv`.
+`./merge.py` takes the intermediate files and appends new records to  `booklist.csv`.
 
 It uses the date and the title as they common key for this.
 
 # to do
 
-1. For export we capture the library to go with the call number, is there a way to do this with email.
+1. For export we capture the library to go with the call number, is there a way to do this with email?  Currently just defaulting.
 2. In `covers` there are places (or maybe just one) where we take the first of a list (should it prompt?)
 
 ## Data sources

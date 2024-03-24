@@ -30,6 +30,15 @@
       "justMyCode": true
     },
     {
+      "name": "merge reset",
+      "type":"debugpy",
+      "request": "launch",
+      "program": "merge.py",
+      "args":["-r"],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
       "name": "search single",
       "type":"debugpy",
       "request": "launch",

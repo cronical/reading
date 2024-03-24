@@ -31,13 +31,13 @@ def split_ta(line):
 
 data=[]
 mail_path=base+'/maildrop'
-
+logger.info(f"Processing mail in {mail_path} ")
 for item in os.listdir(mail_path):
 	folder=os.path.join(mail_path,item)
 	if os.path.isdir(folder):
 		file=os.path.join(folder,"text.txt")
 		if os.path.exists(file):
-			logger.debug(f"Processing {file}")
+			logger.debug(f"=== {item} === ")
 			with open(file) as f:
 				date=None
 				flag=False
