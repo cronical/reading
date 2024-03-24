@@ -70,16 +70,15 @@ def get_lci_info (df):
     title=row['title']
     subtitle=row['subtitle']
     author=row['author']
-    title_only=pd.isnull(author)
     if pd.isna(author):
       author=None
     else:
       if not author.endswith('.'): # check if termination character is intact
         author=None
-        title_only=True
       else: # search on last name to avoid problem with nickname, eg. Dan for Daniel
         authors=from_title(row['author']).authors()
-        author=([a.last for a in authors]+[None])[0]
+        author=([a.last for a in authors]+[None])[0] # could be none if only editor exists for e.g.
+    title_only=author is None
     logger.info (f'{title}')
     logger.info(f'   Author: {author}')
     scheme,hostname,path_template=ta_template(title_only=title_only)
@@ -143,7 +142,9 @@ def get_lci_info (df):
               if x==0:
                 library=' '.join(td.text.strip().split(' '))
               if x==1:
-                call_no=' '.join(td.find('a').text.strip().split(' '))
+                anchor=td.find('a')
+                if anchor is None: break # for some reason the call number is not there. Seen when book is on order at a library.
+                call_no=' '.join(anchor.text.strip().split(' '))
                 library_map[library]=call_no
                 break
         lib_df = pd.DataFrame([library_map.keys(),library_map.values()]).T
