@@ -177,7 +177,8 @@ def get_lci_info (df):
         details+=[detail]
 
   lci_df=pd.DataFrame(details)
-  lci_df.set_index('index',inplace=True)
+  if 'index' in df.columns:
+    lci_df.set_index('index',inplace=True)
   return lci_df
 
 def extract_history_table():

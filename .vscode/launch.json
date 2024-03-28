@@ -25,7 +25,7 @@
       "type":"debugpy",
       "request": "launch",
       "program": "covers.py",
-      "args":["-f", "data/email_data.csv"],
+      "args":[ "Dulles: A Biography of Eleanor, Allen and John Foster Dulles and Their Family"],
       "console": "integratedTerminal",
       "justMyCode": true
     },
