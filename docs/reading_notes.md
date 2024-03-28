@@ -1,6 +1,8 @@
 # Data
+At this point data is staged in files, before loading into the database.
 
-Book data is stored in `booklist.csv`
+- Book data is stored in `booklist.csv`
+- Library data is in `libraries.csv`
 
 # Sources
 
@@ -8,7 +10,7 @@ Email and history are sources that create intermediate files, that are enhanced 
 
 ## Email
 
-`parse_email_checkouts` The mail notices include data for date,author,title,subtitle.  These are parsed by `parse_email_checkouts` stored as `email_data.csv`.
+`via/data/parse_email_checkouts` The mail notices include data for date,author,title,subtitle.  These are parsed by `parse_email_checkouts` stored as `email_data.csv`.
 
 # My reading history
 
@@ -18,7 +20,7 @@ The my reading history function on LCI encore has an export. In order to get the
 
 1. Download full display to local disk. This creates a file `~/Downloads/export.txt`.  Move that to the `data/` folder. 
 
-1. Run program `parse_export.py` which creates intermediate file `my_history.csv`.
+1. Run program `via/data/parse_export.py` which creates intermediate file `my_history.csv`.
 
 # Enhance data
 
@@ -33,14 +35,14 @@ Email based Work flow is
 
 1. put latest updated booklist in data/ (or just the headings if doing a full reset)
 1. bring emails into /data/maildrop
-1. run `./parse_email_checkouts.py`
-1. run `./covers.py -f data/email_data.csv`
+1. run `via/data/parse_email_checkouts.py`
+1. run `via/data/covers.py -f data/email_data.csv`
 
 At that point the email_data.csv and data/covers/ have been updated
 
 ## my history
 
-All the fields are populated directly with `parse_export.py`.  This has to prompt in some cases.  
+All the fields are populated directly with `via/data/parse_export.py`.  This has to prompt in some cases.  
 
 For library it uses the home library unless there it is not on list. If there is only one, use that.  Otherwise ask.
 For standard book numbers it prefers hardback 13 digit, if thats not available it will ask. (this may not be ideal)
@@ -48,7 +50,7 @@ For standard book numbers it prefers hardback 13 digit, if thats not available i
 This is also taking fields not currently used, such as publication info and format.
 
 # Merge
-`./merge.py` takes the intermediate files and appends new records to  `booklist.csv`.
+`via/data/merge.py` takes the intermediate files and appends new records to  `booklist.csv`.
 
 It uses the date and the title as they common key for this.
 
